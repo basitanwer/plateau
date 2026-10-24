@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/screenshot.png" width="326" alt="Plateau popover showing the power flow and charge limit">
+  <img src="docs/demo.gif" width="326" alt="Plateau popover with animated power flow from the adapter to the Mac and battery">
 </p>
 
 Keeping a lithium-ion battery at 100% while plugged in all day wears it out faster. Plateau caps the
