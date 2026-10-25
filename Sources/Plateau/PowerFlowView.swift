@@ -13,16 +13,26 @@ struct PowerFlowView: View {
 
     private var charging: Double { max(battery.batteryPower, 0) }
     private var discharging: Double { max(-battery.batteryPower, 0) }
+    private var toMac: Double { min(battery.powerIn, battery.systemLoad) }
+    /// Everything flowing out of the sources (adapter + battery), so each line's share adds up to 100%.
+    private var totalFlow: Double { battery.powerIn + discharging }
 
     var body: some View {
         ZStack {
             FlowLine(path: curve(to: mac), active: battery.powerIn > 0.2 && battery.systemLoad > 0.2,
-                     tint: .yellow, watts: min(battery.powerIn, battery.systemLoad))
+                     tint: .yellow, watts: toMac)
             FlowLine(path: curve(to: cell), active: charging > 0.2, tint: .green, watts: charging)
             FlowLine(path: Path { p in
                 p.move(to: CGPoint(x: cell.x, y: cell.y - card.height / 2))
                 p.addLine(to: CGPoint(x: mac.x, y: mac.y + card.height / 2))
             }, active: discharging > 0.2, tint: .orange, watts: discharging)
+
+            share(toMac, active: battery.powerIn > 0.2 && battery.systemLoad > 0.2)
+                .position(x: mac.x - card.width / 2 - 18, y: mac.y - 11)
+            share(charging, active: charging > 0.2)
+                .position(x: cell.x - card.width / 2 - 18, y: cell.y + 11)
+            share(discharging, active: discharging > 0.2)
+                .position(x: cell.x + 18, y: (cell.y + mac.y) / 2)
 
             NodeCard(icon: "powerplug.fill", title: battery.externalConnected ? "\(battery.adapterWatts)W" : "Unplugged",
                      value: battery.powerIn, tint: .yellow)
@@ -46,6 +56,16 @@ struct PowerFlowView: View {
         case ..<63: return "battery.50percent"
         case ..<88: return "battery.75percent"
         default: return "battery.100percent"
+        }
+    }
+
+    @ViewBuilder
+    private func share(_ watts: Double, active: Bool) -> some View {
+        if active && totalFlow > 0.2 {
+            Text("\(Int((watts / totalFlow * 100).rounded()))%")
+                .font(.system(.caption, design: .rounded).weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
         }
     }
 
